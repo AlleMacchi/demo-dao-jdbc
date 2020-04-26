@@ -4,7 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import db.DbException;
 import model.dao.SellerDao;
@@ -90,4 +93,42 @@ public class SellerDaoJDBC implements SellerDao{
 		return null;
 	}
 
+	@Override
+	public List<Seller> findByDepartment(Department department) {
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		
+		try {
+			
+			String sql = "SELECT seller.*,department.Name as DepName " + 
+					"FROM seller INNER JOIN department " + 
+					"ON seller.DepartmentId = department.Id " + 
+					"WHERE DepartmentId = ? " + 
+					"ORDER BY Name";
+	
+			st = conn.prepareStatement(sql);
+			st.setInt(1, department.getId());
+			
+			rs = st.executeQuery();
+			List<Seller> list = new ArrayList<>();
+			Map<Integer,Department> map = new HashMap<>();
+			
+			while(rs.next()) {
+				
+				Department dep = map.get(department.getId());
+				if(dep==null) {
+					dep = instanceDepartment(rs);
+				}						
+				
+				Seller sel = instanceSeller(rs,dep);
+				list.add(sel);
+			}
+			return list;
+		}
+		catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		}
+	}
+
+	
 }
